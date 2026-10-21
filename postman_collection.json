@@ -125,7 +125,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "description": "Select sample_java_notes.pdf from your project directory"
+                  "description": "Select any valid PDF file from your computer"
                 }
               ]
             },

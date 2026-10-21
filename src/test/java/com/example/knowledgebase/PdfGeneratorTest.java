@@ -79,8 +79,12 @@ public class PdfGeneratorTest {
                 cs.endText();
             }
 
-            doc.save(new File("sample_java_notes.pdf"));
+            File targetDir = new File("target");
+            if (!targetDir.exists()) {
+                targetDir.mkdirs();
+            }
+            doc.save(new File(targetDir, "test_generated_notes.pdf"));
         }
-        System.out.println("Generated sample_java_notes.pdf successfully");
+        System.out.println("Generated test_generated_notes.pdf in target directory successfully");
     }
 }

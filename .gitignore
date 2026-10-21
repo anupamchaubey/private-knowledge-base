@@ -32,6 +32,8 @@ target/
 .env
 *.local
 *.log
+*.pdf
+test_generated_notes.pdf
 
 ### OS Specific ###
 Thumbs.db
