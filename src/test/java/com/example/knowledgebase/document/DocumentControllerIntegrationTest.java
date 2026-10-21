@@ -112,7 +112,7 @@ class DocumentControllerIntegrationTest {
                 .andExpect(jsonPath("$.error").value("Forbidden"));
 
         // 5. User A successfully deletes their own document -> 204 No Content
-        doNothing().when(ingestionService).deleteDocumentVectors(savedDocA.getId());
+        doNothing().when(ingestionService).deleteDocumentVectors(savedDocA.getId(), userAId);
         mockMvc.perform(delete("/api/documents/" + savedDocA.getId())
                         .header("Authorization", "Bearer " + tokenUserA))
                 .andExpect(status().isNoContent());

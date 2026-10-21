@@ -31,17 +31,14 @@ public class IngestionService {
 
     private final VectorStore vectorStore;
     private final int chunkSize;
-    private final int chunkOverlap;
     private final long maxFileSizeBytes;
 
     public IngestionService(
             VectorStore vectorStore,
             @Value("${app.rag.chunk-size-tokens:500}") int chunkSize,
-            @Value("${app.rag.chunk-overlap-tokens:50}") int chunkOverlap,
             @Value("${app.upload.max-file-size-bytes:10485760}") long maxFileSizeBytes) {
         this.vectorStore = vectorStore;
         this.chunkSize = chunkSize;
-        this.chunkOverlap = chunkOverlap;
         this.maxFileSizeBytes = maxFileSizeBytes;
     }
 
@@ -162,14 +159,19 @@ public class IngestionService {
 
     /**
      * Deletes all vector records belonging to the given document from pgvector.
+     * Enforces defense-in-depth by filtering on both documentId AND userId.
      */
-    public void deleteDocumentVectors(UUID documentId) {
-        log.info("Deleting vector records for document id: {}", documentId);
+    public void deleteDocumentVectors(UUID documentId, UUID userId) {
+        log.info("Deleting vector records for document id: {} and user id: {}", documentId, userId);
         try {
             FilterExpressionBuilder b = new FilterExpressionBuilder();
-            vectorStore.delete(b.eq("documentId", documentId.toString()).build());
+            vectorStore.delete(b.and(
+                    b.eq("documentId", documentId.toString()),
+                    b.eq("userId", userId.toString())
+            ).build());
         } catch (Exception e) {
-            log.error("Failed to delete vector records for document id {}: {}", documentId, e.getMessage(), e);
+            log.error("Failed to delete vector records for document id {} (user {}): {}",
+                    documentId, userId, e.getMessage(), e);
             throw new IngestionException("Failed to delete associated vector chunks: " + e.getMessage(), e);
         }
     }

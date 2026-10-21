@@ -105,8 +105,8 @@ public class DocumentService {
             throw new ForbiddenException("You do not have permission to delete document '" + documentId + "'.");
         }
 
-        // Step 1: Remove associated vector embeddings from pgvector
-        ingestionService.deleteDocumentVectors(documentId);
+        // Step 1: Remove associated vector embeddings from pgvector (scoped to documentId and userId)
+        ingestionService.deleteDocumentVectors(documentId, userId);
 
         // Step 2: Remove relational metadata entity
         documentRepository.delete(document);

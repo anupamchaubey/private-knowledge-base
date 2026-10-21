@@ -86,7 +86,7 @@ class DocumentServiceTest {
         documentService.deleteDocument(docId, ownerId);
 
         InOrder inOrder = inOrder(ingestionService, documentRepository);
-        inOrder.verify(ingestionService).deleteDocumentVectors(docId);
+        inOrder.verify(ingestionService).deleteDocumentVectors(docId, ownerId);
         inOrder.verify(documentRepository).delete(doc);
     }
 
@@ -98,6 +98,6 @@ class DocumentServiceTest {
         when(documentRepository.findById(docId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> documentService.deleteDocument(docId, ownerId));
-        verify(ingestionService, never()).deleteDocumentVectors(any());
+        verify(ingestionService, never()).deleteDocumentVectors(any(), any());
     }
 }

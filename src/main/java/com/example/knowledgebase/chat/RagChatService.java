@@ -1,5 +1,6 @@
 package com.example.knowledgebase.chat;
 
+import com.example.knowledgebase.common.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -54,7 +55,7 @@ public class RagChatService {
             VectorStore vectorStore,
             ChatClient.Builder chatClientBuilder,
             @Value("${app.rag.top-k:4}") int topK,
-            @Value("${app.rag.similarity-threshold:0.60}") double similarityThreshold) {
+            @Value("${app.rag.similarity-threshold:0.35}") double similarityThreshold) {
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.build();
         this.topK = topK;
@@ -62,9 +63,19 @@ public class RagChatService {
     }
 
     /**
-     * Executes the end-to-end RAG pipeline for an authenticated user.
+     * Executes the end-to-end RAG pipeline for an authenticated user:
+     * 1. Validates the question.
+     * 2. Executes user-scoped semantic search in pgvector with similarity filtering.
+     * 3. Returns a grounded abstention message immediately if context is insufficient.
+     * 4. Assembles prompt with injection defense guardrails.
+     * 5. Prompts the LLM via Spring AI ChatClient.
+     * 6. Builds verifiable source citations from retrieved chunks.
      */
     public AnswerResponse askQuestion(String question, UUID userId) {
+        if (question == null || question.isBlank()) {
+            throw new BadRequestException("Question cannot be blank.");
+        }
+
         String trimmedQuestion = question.trim();
         log.info("RAG search query for user {}: '{}'", userId, trimmedQuestion);
 

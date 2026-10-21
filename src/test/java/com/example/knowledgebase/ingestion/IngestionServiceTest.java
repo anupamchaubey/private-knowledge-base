@@ -13,12 +13,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.ByteArrayOutputStream;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class IngestionServiceTest {
@@ -30,7 +34,7 @@ class IngestionServiceTest {
 
     @BeforeEach
     void setUp() {
-        ingestionService = new IngestionService(vectorStore, 500, 50, 10 * 1024 * 1024);
+        ingestionService = new IngestionService(vectorStore, 500, 10 * 1024 * 1024);
     }
 
     @Test
@@ -79,5 +83,15 @@ class IngestionServiceTest {
                 "file", "valid.pdf", "application/pdf", validPdfBytes);
 
         assertDoesNotThrow(() -> ingestionService.validatePdfFile(validFile));
+    }
+
+    @Test
+    @DisplayName("Should invoke vectorStore delete with combined documentId and userId filter")
+    void testDeleteDocumentVectorsWithTenantFilter() {
+        UUID docId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        assertDoesNotThrow(() -> ingestionService.deleteDocumentVectors(docId, userId));
+        verify(vectorStore).delete(any(Filter.Expression.class));
     }
 }

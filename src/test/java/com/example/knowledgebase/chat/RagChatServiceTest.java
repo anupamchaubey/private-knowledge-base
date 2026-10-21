@@ -1,5 +1,6 @@
 package com.example.knowledgebase.chat;
 
+import com.example.knowledgebase.common.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -120,5 +121,13 @@ class RagChatServiceTest {
         assertNotNull(captured.getFilterExpression());
         // Verify user filter is present in expression string
         assertTrue(captured.getFilterExpression().toString().contains(userId.toString()));
+    }
+
+    @Test
+    @DisplayName("Should throw BadRequestException if question is null or blank")
+    void testBlankQuestionThrowsBadRequest() {
+        UUID userId = UUID.randomUUID();
+        assertThrows(BadRequestException.class, () -> ragChatService.askQuestion(null, userId));
+        assertThrows(BadRequestException.class, () -> ragChatService.askQuestion("   ", userId));
     }
 }
