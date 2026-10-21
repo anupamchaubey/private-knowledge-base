@@ -1,0 +1,279 @@
+{
+  "info": {
+    "name": "Private Knowledge Base API (Spring AI RAG)",
+    "_postman_id": "b3f0907a-7bf9-4560-84a2-15fbb128a39a",
+    "description": "Postman Collection for testing Private Knowledge Base API - Spring Boot 3 + Spring AI + pgvector RAG pipeline.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "docId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman.user@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Registers a new user and automatically captures the JWT token in collection variables."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.collectionVariables.set('token', jsonData.token);",
+                  "        console.log('Saved token to collection variable:', jsonData.token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman.user@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Logs in and updates the collection token variable automatically."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.collectionVariables.set('token', jsonData.token);",
+                  "        console.log('Saved token to collection variable:', jsonData.token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Documents",
+      "item": [
+        {
+          "name": "Upload PDF Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Select sample_java_notes.pdf from your project directory"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
+            },
+            "description": "Uploads a PDF, extracts text, chunks it, embeds with 1536-d vectors, and stores into pgvector."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.id) {",
+                  "        pm.collectionVariables.set('docId', jsonData.id);",
+                  "        console.log('Saved docId to collection variable:', jsonData.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List User Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
+            },
+            "description": "Lists all documents owned by the currently authenticated user."
+          }
+        },
+        {
+          "name": "Delete Document & Vectors",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{docId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{docId}}"]
+            },
+            "description": "Deletes the document row and cleans up all associated chunk vectors from PostgreSQL pgvector."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. RAG Chat & Q&A",
+      "item": [
+        {
+          "name": "Ask Question (Constructor Injection)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"Why is constructor injection preferred in Spring Boot?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "ask"]
+            },
+            "description": "Queries pgvector for relevant chunks from the user's documents and generates a grounded response with citations."
+          }
+        },
+        {
+          "name": "Ask Question (Virtual Threads)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"What are Java 21 Virtual Threads and how do they differ from Platform Threads?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "ask"]
+            },
+            "description": "Queries page 2 content to test multi-page context retrieval."
+          }
+        },
+        {
+          "name": "Ask Out-Of-Scope Question (Abstention Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"How do I bake sourdough bread with a Dutch oven?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/ask",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "ask"]
+            },
+            "description": "Tests that questions without matching context return a clean abstention message with grounded=false."
+          }
+        }
+      ]
+    }
+  ]
+}
